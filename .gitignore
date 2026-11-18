@@ -1,3 +1,4 @@
+
 # React / Node
 node_modules/
 frontend/node_modules/
@@ -21,3 +22,16 @@ __pycache__/
 # OS
 .DS_Store
 Thumbs.db
+
+# Face recognition private data
+face_recognition/dataset/
+face_recognition/encodings.pkl
+face_recognition/attendance*.csv
+
+# Python virtual environments
+.venv/
+venv/
+face_recognition/.venv/
+
+# Liveness detection model
+*.onnx

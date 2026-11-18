@@ -5,21 +5,33 @@ import face_recognition
 
 from student_config import STUDENTS
 
+
+# ============================================================
 # SETTINGS
+# ============================================================
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-DATASET_PATH = "dataset"
-ENCODINGS_FILE = "encodings.pkl"
+DATASET_PATH = os.environ.get(
+    "ATTENDANCE_DATASET_DIR",
+    os.path.join(BASE_DIR, "dataset")
+)
 
-# Number of times the image is upsampled during face detection
+ENCODINGS_FILE = os.path.join(BASE_DIR, "encodings.pkl")
+
 UPSAMPLE_TIMES = 1
 
+
+# ============================================================
 # STORAGE
+# ============================================================
 
 known_encodings = []
 known_student_ids = []
 
 
+# ============================================================
 # PROCESS STUDENT FOLDERS
+# ============================================================
 
 for student_id in STUDENTS:
 
@@ -44,7 +56,9 @@ for student_id in STUDENTS:
     print("------------------------------------------")
 
 
+    # ========================================================
     # PROCESS IMAGES
+    # ========================================================
 
     for image_name in os.listdir(student_folder):
 
@@ -64,7 +78,9 @@ for student_id in STUDENTS:
             continue
 
 
+        # ----------------------------------------------------
         # Convert BGR to RGB
+        # ----------------------------------------------------
 
         rgb_image = cv2.cvtColor(
             image,
@@ -72,8 +88,9 @@ for student_id in STUDENTS:
         )
 
 
+        # ----------------------------------------------------
         # Find faces
-    
+        # ----------------------------------------------------
 
         face_locations = face_recognition.face_locations(
             rgb_image,
@@ -81,7 +98,10 @@ for student_id in STUDENTS:
             model="hog"
         )
 
+
+        # ----------------------------------------------------
         # No face
+        # ----------------------------------------------------
 
         if len(face_locations) == 0:
 
@@ -92,8 +112,9 @@ for student_id in STUDENTS:
             continue
 
 
+        # ----------------------------------------------------
         # Multiple faces
-        
+        # ----------------------------------------------------
 
         if len(face_locations) > 1:
 
@@ -103,7 +124,10 @@ for student_id in STUDENTS:
 
             continue
 
+
+        # ----------------------------------------------------
         # Generate encoding
+        # ----------------------------------------------------
 
         encodings = face_recognition.face_encodings(
             rgb_image,
@@ -122,22 +146,53 @@ for student_id in STUDENTS:
         encoding = encodings[0]
 
 
-        
+        # ----------------------------------------------------
         # Store encoding
-        
+        # ----------------------------------------------------
 
         known_encodings.append(encoding)
-
         known_student_ids.append(student_id)
 
         print(
             f"Encoded: {image_name}"
         )
 
+# ============================================================
+# VALIDATE ENCODINGS
+# ============================================================
+
+students_without_encodings = [
+    student_id
+    for student_id in STUDENTS
+    if student_id not in known_student_ids
+]
+
+if not known_encodings or students_without_encodings:
+
+    print()
+    print("==========================================")
+    print(" FACE ENCODING VALIDATION FAILED")
+    print("==========================================")
+
+    for student_id in students_without_encodings:
+        print(
+            f"Missing encoding: {student_id} - "
+            f"{STUDENTS[student_id]}"
+        )
+
+    print("Encodings were NOT saved.")
+    print("Please check the dataset folders and images.")
+    print("==========================================")
+
+    raise SystemExit(1)
+
+print()
+print("All students have at least one valid encoding.")
 
 
+# ============================================================
 # SAVE ENCODINGS
-
+# ============================================================
 
 data = {
     "encodings": known_encodings,
@@ -154,9 +209,9 @@ with open(
         data,
         file
     )
-
-
+# ============================================================
 # FINAL RESULT
+# ============================================================
 
 print()
 print("==========================================")
